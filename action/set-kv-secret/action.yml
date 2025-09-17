@@ -20,17 +20,26 @@ runs:
         SECRET_NAME: ${{ inputs.secret-name }}
         NEW_VALUE: ${{ inputs.new-secret-value }}
       run: |
-        echo "Retrieving secret value from Key Vault..."
-        SECRET_VALUE=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --query "value" -o tsv 2>/dev/null)
+        echo "Check to see if the secret exists..."
+        SECRET_VERSION=$(az keyvault secret list-versions --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --maxresults 1 -o tsv)
 
-        SECRET_HASH=$(echo "$SECRET_VALUE" | sha256sum | awk '{print $1}')
-        NEW_HASH=$(echo "$NEW_VALUE" | sha256sum | awk '{print $1}')
+        if [ -n "$SECRET_VERSION" ]; then
+          echo "Retrieving secret value from Key Vault..."
+          SECRET_VALUE=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --query "value" -o tsv)
 
-        if [ "$SECRET_HASH" == "$NEW_HASH" ]; then
-          echo "The secret value matches with the new value. Skipping updating the key vault secret."
+          SECRET_HASH=$(echo "$SECRET_VALUE" | sha256sum | awk '{print $1}')
+          NEW_HASH=$(echo "$NEW_VALUE" | sha256sum | awk '{print $1}')
+
+          if [ "$SECRET_HASH" == "$NEW_HASH" ]; then
+            echo "The secret value matches with the new value. Skipping updating the key vault secret."
+          else
+            echo "The secret value does NOT match the new value. Updating the key vault secret..."
+            az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --value "$NEW_VALUE" -o none
+            echo "Secret updated to key vault successfully."
+          fi
         else
-          echo "The secret value does NOT match the new value. Updating the key vault secret..."
+          echo "The secret does not exist. Creating the secret in key vault..."
           az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --value "$NEW_VALUE" -o none
-          echo "Secret updated to key vault successfully."
+          echo "Secret created in key vault successfully."s
         fi
-        exit 0
+
