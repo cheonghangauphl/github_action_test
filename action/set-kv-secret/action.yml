@@ -33,3 +33,4 @@ runs:
           az keyvault secret set --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --value "$NEW_VALUE" -o none
           echo "Secret updated to key vault successfully."
         fi
+        exit 0
