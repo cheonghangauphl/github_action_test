@@ -20,4 +20,4 @@ jobs:
           with:
             keyvault-name: "web-t-ae-kvt"
             secret-name: "auch-test"
-            new-secret-value: "new-secret-value"
+            new-secret-value: ${{ secrets.SECRET_VALUE }}
