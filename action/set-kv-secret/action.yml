@@ -48,9 +48,9 @@ runs:
       env:
         KEY_VAULT_NAME: ${{ inputs.keyvault-name }}
         SECRET_NAME: ${{ inputs.secret-name }}
-        RETAIN_VERSIONS: 10
+        RETAIN_VERSIONS: 2
       run: |
-        echo "Fetching secret versions..."
+        echo "Fetching secret versions for housekeeping..."
         VERSIONS=$(az keyvault secret list-versions --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --query "[].{id:id,created:attributes.created}" --output tsv)
         SORTED_VERSIONS=$(echo "$VERSIONS" | sort -r -k2)
 
