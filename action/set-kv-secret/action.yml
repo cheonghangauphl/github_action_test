@@ -43,3 +43,24 @@ runs:
           echo "Secret created in key vault successfully."s
         fi
 
+    - name: Hosekeep old key vault secret versions
+      shell: bash
+      env:
+        KEY_VAULT_NAME: ${{ inputs.keyvault-name }}
+        SECRET_NAME: ${{ inputs.secret-name }}
+        RETAIN_VERSIONS: 10
+      run: |
+        echo "Fetching secret versions..."
+        VERSIONS=$(az keyvault secret list-versions --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --query "[].{id:id,created:attributes.created}" --output tsv)
+        SORTED_VERSIONS=$(echo "$VERSIONS" | sort -r -k2)
+
+        COUNT=0
+        while IFS=$'\t' read -r ID CREATED; do
+          COUNT=$((COUNT + 1))
+          if [ "$COUNT" -gt "$RETAIN_VERSIONS" ]; then
+            echo "Disabling secret version: $ID"
+            az keyvault secret set-attributes --id "$ID" --enabled false --expires "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" -o none
+          fi
+        done <<< "$SORTED_VERSIONS"
+        echo "Cleanup complete. Retained $RETAIN_VERSIONS most recent versions of the secret."        
+
