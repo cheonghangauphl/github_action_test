@@ -21,7 +21,7 @@ runs:
         NEW_VALUE: ${{ inputs.new-secret-value }}
       run: |
         echo "Retrieving secret value from Key Vault..."
-        SECRET_VALUE=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --query "value" -o tsv)
+        SECRET_VALUE=$(az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$SECRET_NAME" --query "value" -o tsv 2>/dev/null)
 
         SECRET_HASH=$(echo "$SECRET_VALUE" | sha256sum | awk '{print $1}')
         NEW_HASH=$(echo "$NEW_VALUE" | sha256sum | awk '{print $1}')
